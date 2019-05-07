@@ -56,7 +56,6 @@ package ad5791_typedefs_constants is
 	
 	-- Number of extra bits on the phase accumulators
 	constant CONST_PHASE_ACC_LENGTH : integer := CONST_MIN_RAMP_DT;
-	
 
 	-----------------------------------
 	---- Computer control constant ----
