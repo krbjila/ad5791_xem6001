@@ -41,7 +41,7 @@ package ad5791_typedefs_constants is
 	
 	-- Clock divider
 	-- Serial clock is (48 MHz = ti_clk) / CONST_CLK_DIV
-	constant CONST_CLK_DIV	: integer := 6;
+	constant CONST_CLK_DIV	: integer := 12;
 	
 	-- Number of words that define a single step of the sequence
 	constant CONST_N_STEP_WORDS : integer := 3;
@@ -77,7 +77,7 @@ package ad5791_typedefs_constants is
 	-------------------------------
 	
 	constant CONST_N_CHANNELS : integer := 6;
-	constant CONST_RAM_DEPTH : integer := 8;
+	constant CONST_RAM_DEPTH : integer := 10;
 	
 	type address_t is array(CONST_N_CHANNELS - 1 downto 0) of unsigned(CONST_RAM_DEPTH - 1 downto 0);
 	type data_in_t is array(CONST_N_CHANNELS - 1 downto 0) of std_logic_vector(CONST_N_STEP_WORDS * CONST_STEP_WORD_LENGTH - 1 downto 0);

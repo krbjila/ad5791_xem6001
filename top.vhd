@@ -84,27 +84,7 @@ begin
 		end if;
 	end process;
 	
-	
-	test : process(ok_state)
-	begin
-		led <= (others => '1');
-		
-		case ok_state is
-			when ST_IDLE =>
-				led <= (others => '1');
-			when ST_READY =>
-				led <= not "00000100";
-			when ST_LOAD =>
-				led <= not "00000011";
-			when ST_RESET =>
-				led <= not "00000001";
-			when ST_INIT =>
-				led <= not "00000010";
-			when ST_RUN =>
-				led <= not "00001000";
-		end case;
-	end process;
---	led <= (others => '1');
+	led <= (others => '1');
 
 ----------------------
 -- Computer control --
