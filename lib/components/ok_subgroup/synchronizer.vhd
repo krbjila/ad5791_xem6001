@@ -43,7 +43,16 @@ end synchronizer;
 
 architecture arch_synchronizer of synchronizer is
 
+	attribute ASYNC_REG : string;
+	attribute RLOC : string;
+	
 	signal temp : std_logic_vector(N_BITS - 1 downto 0) := (others => '0');
+	attribute ASYNC_REG of temp : signal is "TRUE";
+	attribute ASYNC_REG of q : signal is "TRUE";
+	attribute RLOC of temp : signal is "X0Y0";
+	attribute RLOC of q : signal is "X0Y0";
+	
+
 
 begin
 	

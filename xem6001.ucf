@@ -93,7 +93,7 @@ NET "reset_inverse_bus"	LOC="J16" | IOSTANDARD="LVCMOS33" | DRIVE=8 | SLEW=FAST;
 
 NET "global_clk_in"		LOC="J4" | IOSTANDARD="LVCMOS33" | SLEW=FAST;
 NET "m_reset_switch"		LOC="R14" | IOSTANDARD="LVCMOS33" | SLEW=FAST | PULLUP=TRUE;
-NET "trigger"				LOC="A3" | IOSTANDARD="LVCMOS33" | SLEW=FAST | PULLUP=TRUE;
+NET "trigger"				LOC="A3" | IOSTANDARD="LVCMOS33" | SLEW=FAST | PULLDOWN=TRUE;
 
 #------------
 # Peripherals

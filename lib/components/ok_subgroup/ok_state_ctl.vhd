@@ -84,8 +84,8 @@ begin
 			when "011" =>
 				nx_state <= ST_LOAD;
 			when "100" =>
-				-- Trigger goes low to start sequence
-				if trigger_sync(0) = '0' then
+				-- Trigger goes high to start sequence
+				if trigger_sync(0) = '1' then
 					nx_state <= ST_RUN;
 				else
 					nx_state <= ST_READY;
@@ -93,14 +93,6 @@ begin
 			when others =>
 				nx_state <= ST_IDLE;
 		end case;
-		
-		-- If we are in ST_RUN, trigger may have returned high
-		-- But stay in ST_RUN until ep00wire changes
-		if pr_state = ST_RUN then
-			if ep00wire = "100" then
-				nx_state <= ST_RUN;
-			end if;
-		end if;
 		
 	end process;
 
