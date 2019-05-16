@@ -85,7 +85,7 @@ begin
 				nx_state <= ST_LOAD;
 			when "100" =>
 				-- Trigger goes high to start sequence
-				if trigger_sync(0) = '1' then
+				if trigger_sync(0) = '1' or pr_state = ST_RUN then
 					nx_state <= ST_RUN;
 				else
 					nx_state <= ST_READY;

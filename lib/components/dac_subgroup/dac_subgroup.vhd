@@ -58,6 +58,14 @@ architecture dac_subgroup_arch of dac_subgroup is
 	signal dac_clk_inv, dac_clk_inv_unbuffered : std_logic := '1';
 	
 	signal inv_dac_rst : std_logic_vector(n_channels - 1 downto 0) := (others => '0');
+	
+	signal ok_state_sync, ok_state_temp : ok_state_t;
+	
+	attribute ASYNC_REG : string;
+	attribute RLOC : string;
+	
+	attribute ASYNC_REG of ok_state_temp : signal is "TRUE";
+	attribute ASYNC_REG of ok_state_sync : signal is "TRUE";
 
 begin
 
@@ -74,7 +82,7 @@ begin
 		)
 		port map (
 			clk => dac_clk,
-			ok_state => ok_state,
+			ok_state => ok_state_sync,
 			data_in => data_in(i),
 			rst => rst,
 			sdo => sdo_bus(i),
@@ -143,5 +151,15 @@ begin
       O => dac_clk_inv  -- 1-bit input: Clock buffer input
    );
 
+	
+	sync_ok_state : process(dac_clk, ok_state, ok_state_sync, ok_state_temp) is 
+	begin
+		if rising_edge(dac_clk) then
+			ok_state_temp <= ok_state;
+			ok_state_sync <= ok_state_temp;
+		end if;
+	end process;
+	
+	
 end dac_subgroup_arch;
 

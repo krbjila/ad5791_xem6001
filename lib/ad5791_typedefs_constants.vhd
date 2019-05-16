@@ -52,7 +52,7 @@ package ad5791_typedefs_constants is
 
 	-- Minimum time for a step in the ramp
 	-- Defined as 1 ramp step every  2**CONST_RAMP_STEP_TIME clock cycles
-	constant CONST_MIN_RAMP_DT : integer := 8;
+	constant CONST_MIN_RAMP_DT : integer := 6;
 	
 	-- Number of extra bits on the phase accumulators
 	constant CONST_PHASE_ACC_LENGTH : integer := CONST_MIN_RAMP_DT;
@@ -61,8 +61,6 @@ package ad5791_typedefs_constants is
 	---- Computer control constant ----
 	-----------------------------------
 	
-	-- Period of ti_clk
-	constant CONST_OK_CLK_PERIOD : real := 20.833;
 	-- Number of bits that define state on ep00wire
 	constant CONST_EP00_N_BITS : integer := 3;
 	-- Number of bits that define state on ep01wire
