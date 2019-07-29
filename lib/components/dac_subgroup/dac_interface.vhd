@@ -73,13 +73,16 @@ architecture arch_dac_interface of dac_interface is
 
 	-- Total serial transmission length
 	constant tx_length : integer := tw_length + addr_length;
-	-- Extra data setup time to be safe
-	constant DATA_SETUP_TIME : integer := 2;
-	-- Additional latency of the serial block due to
+	-- Latency for triggering serial and receiving "done" signal
+	constant SERIAL_LATENCY : integer := 3;
+	-- Additional latency of the ST_RUN block due to
 	-- calculating ramp parameters
-	constant CALCULATE_LATENCY : integer := 5; -- 5 for 2 (ST_NEWDATA) + 1 (ST_PRIORITY) + 1 (ST_CALCULATE) + 1 (ST_ADVANCE)
+	constant CALCULATION_LATENCY : integer := 4; -- 4 for 1 (ST_NEWDATA) + 1 (ST_PRIORITY) + 1 (ST_CALCULATE) + 1 (ST_ADVANCE)
 	-- Total minimum time to output a step on the ramp
-	constant MIN_WAIT_TIME : integer := tx_length + DATA_SETUP_TIME + CALCULATE_LATENCY;
+	constant MIN_WAIT_TIME : integer := tx_length + SERIAL_LATENCY + CALCULATION_LATENCY;
+	-- Wait time difference
+	-- Need to account for the data setup, transmission, plus one clock cycle for advance
+	constant WAIT_OFFSET : integer := tx_length + SERIAL_LATENCY + 1;
 
 	-- Max wait time for a ramp and max counter value, in clk cycles
 	constant MAX_COUNT : integer := 2**dt_length - 1;
@@ -319,7 +322,9 @@ begin
 			when ST_WAIT =>
 				-- Wait for wait_time to elapse
 				-- MIN_WAIT_TIME counts the latency from ST_NEWDATA, ST_PRIORITY, ST_CALCULATE, and ST_ADVANCE
-				if counter < wait_time - MIN_WAIT_TIME then
+				-- Subtract 1 because we want to wait exactly wait_time - WAIT_OFFSET total counts,
+				-- and counter starts from 0.
+				if counter < wait_time - WAIT_OFFSET - 1 then
 					if ok_state = ST_RUN then
 						nx_state <= ST_WAIT;
 					end if;
@@ -419,7 +424,7 @@ begin
 						nx_state <= ST_WRITE;
 					end if;
 					
-				-- Otherwise, the total ramp time is long enough to require a wait_time, and possible multiple voltage steps
+				-- Otherwise, the total ramp time is long enough to require a wait_time, and possibly multiple voltage steps
 				else
 					-- (priority + 1) is the position of the left-most nonzero bit of ramp_time
 					-- Check to see if the ramp_time is longer than the minimum ramp time (defined by min_ramp_dt).
@@ -430,8 +435,8 @@ begin
 						-- The extra bits of precision in dt and ramp_time ensure that rounding errors are minimal.
 						dt_reg <= shift_right(ramp_time, priority - phase_acc_length - min_ramp_dt + 1);
 						
-						-- The number of voltage steps is given by (priority + 1 - phase_acc_length - min_ramp_dt).
-						-- We want to bitshift dv right by this number to get the voltage change per step.
+						-- The number of voltage steps is given by 2**(priority + 1 - phase_acc_length - min_ramp_dt).
+						-- We want to bitshift dv right by the exponent to get the voltage change per step.
 						-- Due to the way that dv is calculated in ST_PRIORITY, it also needs to be bit-shifted left by phase_acc_length bits.
 						--
 						-- We cannot do these two operations sequentially because we will end up rounding unneccessarily.
@@ -450,10 +455,18 @@ begin
 						dt_reg <= ramp_time;
 					end if;
 					
-					-- If the ramp endpoints are the same value, then just do one long step with no change
+					-- If the ramp endpoints are the same value, then just do one long step with no change.
+					-- Similarly, remove extra latency:
 					if dv = 0 then
 						dt_reg <= ramp_time;
 					end if;
+					
+					-- Account for the latency from the calculation stages
+					-- 	1 for ST_NEWDATA
+					--		1 for ST_PRIORITY
+					--		1 for ST_CALCULATE
+					--		1 for first ST_ADVANCE
+					ramp_time_reg <= ramp_time - shift_left(to_unsigned(CALCULATION_LATENCY, ramp_time'length), phase_acc_length);
 						
 					-- Go to advance!
 					nx_state <= ST_ADVANCE;
