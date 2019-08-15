@@ -131,7 +131,8 @@ generic map (
 	addr_length => CONST_ADDR_LENGTH,
 	phase_acc_length => CONST_PHASE_ACC_LENGTH,
 	min_ramp_dt => CONST_MIN_RAMP_DT,
-	dt_length => CONST_DT_LENGTH
+	dt_length => CONST_DT_LENGTH,
+	max_ramp_steps => CONST_MAX_RAMP_STEPS
 )
 port map (
 	clk => clk,

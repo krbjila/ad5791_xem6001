@@ -30,7 +30,10 @@ entity dac_interface is
 		phase_acc_length : integer;
 		-- Min_ramp_dt defines the minimum time of an individual step in the ramp
 		-- according to (step time) > 2**min_ramp_dt
-		min_ramp_dt		: integer
+		min_ramp_dt		: integer;
+		-- Max_ramp_dt defines the maximum number of steps on a ramp
+		-- according to max steps = 2**max_ramp_steps
+		max_ramp_steps	: integer
 	);
 	port (
 		-- Input clock
@@ -121,13 +124,13 @@ architecture arch_dac_interface of dac_interface is
 	signal accumulator, accumulator_reg, dv, dv_reg : signed(tw_length + phase_acc_length - 1 downto 0) := (others => '0');
 	
 	-- Priority encoder
-	-- priority + 1 holds the position of the left-most non-zero value of ramp_time.
+	-- priority holds the position of the left-most non-zero value of ramp_time.
 	-- This is needed for calculating dt.
 	-- If priority - phase_acc_length < min_ramp_dt, then ramp_time is less than the minimum ramp time (2**min_ramp_dt)
 	-- so the ramp should just be output as a step.
-	-- Otherwise, we can take dt = (ramp_time >> priority + 1 - phase_acc_length - min_ramp_dt),
+	-- Otherwise, we can take dt = (ramp_time >> priority - phase_acc_length - min_ramp_dt),
 	-- which gives us 2**(priority - phase_acc_length - min_ramp_dt) steps with very small rounding error (dt has phase_acc_length extra bits of precision)
-	signal priority : integer range 0 to dt_length - 1 := 0;
+	signal priority : integer range 0 to dt_length + phase_acc_length - 1 := 0;
 
 	-- Signal for registering output ready
 	signal ready_reg : std_logic := '0';
@@ -198,6 +201,7 @@ begin
 		variable v2 : unsigned(dt_length - 1 downto 0) := (others => '0');
 		variable v3 : signed(tw_length + phase_acc_length - 1 downto 0) := (others => '0');
 		variable v4 : signed(tw_length downto 0) := (others => '0');
+		variable num_steps : integer range 0 to max_ramp_steps := 0;
 	begin
 		-- Assign defaults
 		nx_state <= pr_state;
@@ -426,25 +430,31 @@ begin
 					
 				-- Otherwise, the total ramp time is long enough to require a wait_time, and possibly multiple voltage steps
 				else
-					-- (priority + 1) is the position of the left-most nonzero bit of ramp_time
+					-- priority is the position of the left-most nonzero bit of ramp_time
 					-- Check to see if the ramp_time is longer than the minimum ramp time (defined by min_ramp_dt).
 					-- Need to subtract by phase_acc_length here because ramp_time has an extra phase_acc_length decimal part
 					if priority > min_ramp_dt + phase_acc_length then
+						if priority - min_ramp_dt - phase_acc_length < max_ramp_steps then
+							num_steps := priority - min_ramp_dt - phase_acc_length;
+						else
+							num_steps := max_ramp_steps;
+						end if;
+							
 						-- Then the time step is going to basically be the top min_ramp_dt nonzero bits of ramp_time.
 						-- This simplifies the math, as the number of steps in the ramp is now a power of two.
 						-- The extra bits of precision in dt and ramp_time ensure that rounding errors are minimal.
-						dt_reg <= shift_right(ramp_time, priority - phase_acc_length - min_ramp_dt + 1);
+						dt_reg <= shift_right(ramp_time, num_steps);
 						
-						-- The number of voltage steps is given by 2**(priority + 1 - phase_acc_length - min_ramp_dt).
+						-- The number of voltage steps is given by 2**(priority - phase_acc_length - min_ramp_dt).
 						-- We want to bitshift dv right by the exponent to get the voltage change per step.
 						-- Due to the way that dv is calculated in ST_PRIORITY, it also needs to be bit-shifted left by phase_acc_length bits.
 						--
 						-- We cannot do these two operations sequentially because we will end up rounding unneccessarily.
 						-- So do them together at the same time:
-						if priority + 1 - phase_acc_length - min_ramp_dt > phase_acc_length then
-							dv_reg <= shift_right(dv, (priority - phase_acc_length + 1) - phase_acc_length - min_ramp_dt);
+						if num_steps > phase_acc_length then
+							dv_reg <= shift_right(dv, num_steps - phase_acc_length);
 						else
-							dv_reg <= shift_left(dv, phase_acc_length + min_ramp_dt - (priority - phase_acc_length + 1));
+							dv_reg <= shift_left(dv, phase_acc_length - num_steps);
 						end if;
 						
 					-- Otherwise, the total ramp time is short enough that we should just output a single step.
@@ -510,7 +520,7 @@ begin
 			priority <= 0;
 		elsif rising_edge(clk) then
 			priority <= 0;
-			for i in dt_length - 1 downto 0 loop
+			for i in ramp_time'length - 1 downto 0 loop
 				if ramp_time(i) = '1' then
 					priority <= i;
 					exit;

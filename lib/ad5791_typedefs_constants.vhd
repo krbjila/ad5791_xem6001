@@ -55,7 +55,13 @@ package ad5791_typedefs_constants is
 	constant CONST_MIN_RAMP_DT : integer := 6;
 	
 	-- Number of extra bits on the phase accumulators
-	constant CONST_PHASE_ACC_LENGTH : integer := CONST_MIN_RAMP_DT;
+	constant CONST_PHASE_ACC_LENGTH : integer := 12;
+	
+	-- Limit number of steps in a ramp
+	-- 2**CONST_MAX_RAMP_STEPS is the max number of steps
+	-- Maximum relative rounding error on the voltage is 2**(CONST_MAX_RAMP_STEPS - CONST_PHASE_ACC_LENGTH) / 2**(CONST_TW_LENGTH)
+	constant CONST_MAX_RAMP_STEPS : integer := 16;
+	
 
 	-----------------------------------
 	---- Computer control constant ----
@@ -149,7 +155,8 @@ package ad5791_typedefs_constants is
 		addr_length : integer;
 		phase_acc_length : integer;
 		min_ramp_dt		: integer;
-		dt_length	: integer
+		dt_length	: integer;
+		max_ramp_steps : integer
 	);
 	port (
 		clk					: in std_logic;
@@ -170,7 +177,8 @@ package ad5791_typedefs_constants is
 		addr_length : integer;
 		phase_acc_length : integer;
 		min_ramp_dt		: integer;
-		dt_length	: integer
+		dt_length	: integer;
+		max_ramp_steps : integer
 	);
 	port (
 		clk				: in std_logic;

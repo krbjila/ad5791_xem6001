@@ -37,7 +37,8 @@ generic (
 	addr_length : integer;
 	phase_acc_length : integer;
 	min_ramp_dt		: integer;
-	dt_length	: integer
+	dt_length	: integer;
+	max_ramp_steps : integer
 );
 port (
 	clk					: in std_logic;
@@ -78,7 +79,8 @@ begin
 			addr_length => addr_length,
 			phase_acc_length => phase_acc_length,
 			min_ramp_dt => min_ramp_dt,
-			dt_length => dt_length
+			dt_length => dt_length,
+			max_ramp_steps => max_ramp_steps
 		)
 		port map (
 			clk => dac_clk,
