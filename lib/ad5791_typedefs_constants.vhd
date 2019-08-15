@@ -59,7 +59,10 @@ package ad5791_typedefs_constants is
 	
 	-- Limit number of steps in a ramp
 	-- 2**CONST_MAX_RAMP_STEPS is the max number of steps
-	-- Maximum relative rounding error on the voltage is 2**(CONST_MAX_RAMP_STEPS - CONST_PHASE_ACC_LENGTH) / 2**(CONST_TW_LENGTH)
+	-- Max truncation is 2**(CONST_MAX_RAMP_STEPS - CONST_PHASE_ACC_LENGTH)
+	-- So relative to the full scale of the DAC, the maximum rounding error is
+	-- 2**(CONST_MAX_RAMP_STEPS - CONST_PHASE_ACC_LENGTH) / 2**(CONST_TW_LENGTH)
+	-- For 12 bit phase acc and 2**16 max steps, this gives ~15 ppm max rounding error 
 	constant CONST_MAX_RAMP_STEPS : integer := 16;
 	
 
