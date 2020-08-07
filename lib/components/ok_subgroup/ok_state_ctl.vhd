@@ -85,7 +85,9 @@ begin
 				nx_state <= ST_LOAD;
 			when "100" =>
 				-- Trigger goes high to start sequence
-				if trigger_sync(0) = '1' or pr_state = ST_RUN then
+				-- 8/7/20 added optoisolator in trigger line
+				-- This inverts the trigger
+				if trigger_sync(0) = '0' or pr_state = ST_RUN then
 					nx_state <= ST_RUN;
 				else
 					nx_state <= ST_READY;
