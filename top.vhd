@@ -99,6 +99,7 @@ port map (
 	rst => rst,
 	trigger => trigger,
 	clk_out => clk,
+	global_clk_in => global_clk_in,
 	ok_state => ok_state,
 	channel => channel,
 	ep80write => ep80write,

@@ -33,7 +33,10 @@ entity ok_state_ctl is
 		rst			: in std_logic;
 		
 		clk			: in std_logic;
+		clk_out		: out std_logic;
+		global_clk_in : in std_logic;
 		
+		ok_state_slv	: out std_logic_vector(2 downto 0);
 		ok_state		: out ok_state_t;
 		channel		: out integer range 0 to CONST_N_CHANNELS - 1
 	);
@@ -47,11 +50,49 @@ architecture ok_state_ctl_arch of ok_state_ctl is
 	signal trigger_unsync : std_logic_vector(0 downto 0) := (others => '0');
 	signal trigger_sync : std_logic_vector(0 downto 0) := (others => '0');
 	signal channel_reg : integer range 0 to CONST_N_CHANNELS - 1 := 0;
+
+	signal clk_sel : std_logic := 0;
+
+	function OKSTATE_TO_SLV(X : ok_state_t)
+		return std_logic_vector(2 downto 0) is
+	begin
+		if X = ST_IDLE then
+			return '000';
+		elsif X = ST_RESET
+			return '001';
+		elsif X = ST_INIT
+			return '010';
+		elsif X = ST_LOAD
+			return '011';
+		elsif X = ST_READY
+			return '100';
+		else
+			return '101';
+		end if;
+	end OKSTATE_TO_SLV;
+
+	function SLV_TO_OKSTATE(X : std_logic_vector(2 downto 0))
+		return ok_state_t is
+	begin
+		if X = '000' then
+			return ST_IDLE;
+		elsif X = '001'
+			return ST_RESET;
+		elsif X = '010'
+			return ST_INIT;
+		elsif X = '011'
+			return ST_LOAD;
+		elsif X = '100'
+			return ST_READY;
+		else
+			return ST_RUN;
+		end if;
+	end SLV_TO_OKSTATE;
 	
 begin
 
 	trigger_unsync(0) <= trigger;
-	ok_state <= pr_state;
+	ok_state <= SLV_TO_OKSTATE(ok_state_slv);
 
 	-- Advance state
 	seq : process(clk, rst) is
@@ -96,6 +137,19 @@ begin
 		
 	end process;
 
+	clk_sel <= '1' when (nx_state = ST_READY or nx_state = ST_RUN) else '0';
+
+	sync_out_clk : synchronizer
+	generic map (
+		N_BITS => 3
+	)
+	port map (
+		clk => clk_out,
+		rst => rst,
+		d => OKSTATE_TO_SLV(pr_state),
+		q => ok_state_slv
+	);
+
 	sync_inst_trigger : synchronizer
 	generic map (
 		N_BITS => 1
@@ -105,6 +159,17 @@ begin
 		rst => rst,
 		d => trigger_unsync,
 		q => trigger_sync
+	);
+
+	BUFGMUX_clk : BUFGMUX
+	generic map (
+		CLK_SEL_TYPE => "SYNC"  -- Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
+	)
+	port map (
+		O => clk_out,   -- 1-bit output: Clock buffer output
+		I0 => clk, -- 1-bit input: Clock buffer input (S=0)
+		I1 => ext_clk, -- 1-bit input: Clock buffer input (S=1)
+		S => clk_sel    -- 1-bit input: Clock buffer select
 	);
 	
 end ok_state_ctl_arch;

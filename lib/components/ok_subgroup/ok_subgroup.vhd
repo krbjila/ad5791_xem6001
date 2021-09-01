@@ -41,7 +41,9 @@ entity ok_subgroup is
 		
 		-- Clocks
 		-- USB clk (ti_clk) from Opal Kelly interface
-		clk_out		: out std_logic;
+		clk_out			: out std_logic;
+		-- external clock in
+		global_clk_in 	: in std_logic;
 		
 		-- State from the computer control,
 		-- controlled by ep00wire
@@ -67,7 +69,6 @@ architecture arch_ok_subgroup of ok_subgroup is
 	signal ep40trigger : std_logic_vector(15 downto 0);
 
 begin
-	clk_out <= clk;
 	m_rst <= ep40trigger(0);
 	
 	ok_interface_inst : ok_interface
@@ -92,6 +93,8 @@ begin
 		trigger => trigger,
 		rst => rst,
 		clk => clk,
+		clk_out => clk_out,
+		global_clk_in => global_clk_in,
 		ok_state => ok_state,
 		channel => channel
 	);
