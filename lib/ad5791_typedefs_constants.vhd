@@ -231,6 +231,7 @@ package ad5791_typedefs_constants is
 		rst			: in 	std_logic;
 		trigger		: in std_logic;
 		clk_out		: out std_logic;
+		global_clk_in : in std_logic;
 		ok_state		: out ok_state_t;
 		channel		: out integer range 0 to CONST_N_CHANNELS - 1 := 0;
 		ep80write	: out std_logic := '0';
@@ -261,6 +262,8 @@ package ad5791_typedefs_constants is
 		trigger		: in std_logic;
 		rst			: in std_logic;
 		clk			: in std_logic;
+		clk_out		: out std_logic;
+		global_clk_in : in std_logic;
 		ok_state		: out ok_state_t;
 		channel		: out integer range 0 to CONST_N_CHANNELS - 1
 	);

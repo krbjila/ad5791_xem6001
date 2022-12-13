@@ -24,6 +24,9 @@ use work.ad5791_typedefs_constants.all;
 
 use IEEE.NUMERIC_STD.ALL;
 
+Library UNISIM;
+use UNISIM.vcomponents.all;
+
 entity ok_state_ctl is
 	port (
 		ep00wire		: in std_logic_vector(CONST_EP00_N_BITS - 1 downto 0);
@@ -51,38 +54,42 @@ architecture ok_state_ctl_arch of ok_state_ctl is
 	signal trigger_sync : std_logic_vector(0 downto 0) := (others => '0');
 	signal channel_reg : integer range 0 to CONST_N_CHANNELS - 1 := 0;
 
-	signal clk_sel : std_logic := 0;
+	signal clk_sel : std_logic := '0';
+	signal div_clk : std_logic := '0';
+	
+	signal ok_state_slv_sig : std_logic_vector(2 downto 0);
+	signal clk_out_sig : std_logic;
 
 	function OKSTATE_TO_SLV(X : ok_state_t)
-		return std_logic_vector(2 downto 0) is
+		return std_logic_vector is
 	begin
 		if X = ST_IDLE then
-			return '000';
-		elsif X = ST_RESET
-			return '001';
-		elsif X = ST_INIT
-			return '010';
-		elsif X = ST_LOAD
-			return '011';
-		elsif X = ST_READY
-			return '100';
+			return "000";
+		elsif X = ST_RESET then
+			return "001";
+		elsif X = ST_INIT then
+			return "010";
+		elsif X = ST_LOAD then
+			return "011";
+		elsif X = ST_READY then
+			return "100";
 		else
-			return '101';
+			return "101";
 		end if;
 	end OKSTATE_TO_SLV;
 
 	function SLV_TO_OKSTATE(X : std_logic_vector(2 downto 0))
 		return ok_state_t is
 	begin
-		if X = '000' then
+		if X = "000" then
 			return ST_IDLE;
-		elsif X = '001'
+		elsif X = "001" then
 			return ST_RESET;
-		elsif X = '010'
+		elsif X = "010" then
 			return ST_INIT;
-		elsif X = '011'
+		elsif X = "011" then
 			return ST_LOAD;
-		elsif X = '100'
+		elsif X = "100" then
 			return ST_READY;
 		else
 			return ST_RUN;
@@ -92,7 +99,7 @@ architecture ok_state_ctl_arch of ok_state_ctl is
 begin
 
 	trigger_unsync(0) <= trigger;
-	ok_state <= SLV_TO_OKSTATE(ok_state_slv);
+	ok_state <= SLV_TO_OKSTATE(ok_state_slv_sig);
 
 	-- Advance state
 	seq : process(clk, rst) is
@@ -103,6 +110,14 @@ begin
 		elsif rising_edge(clk) then
 			pr_state <= nx_state;
 			channel <= channel_reg;
+		end if;
+	end process;
+
+	-- Divide the clock
+	div: process(clk, div_clk) is
+	begin
+		if rising_edge(clk) then
+			div_clk <= not div_clk;
 		end if;
 	end process;
 	
@@ -144,10 +159,10 @@ begin
 		N_BITS => 3
 	)
 	port map (
-		clk => clk_out,
+		clk => clk_out_sig,
 		rst => rst,
 		d => OKSTATE_TO_SLV(pr_state),
-		q => ok_state_slv
+		q => ok_state_slv_sig
 	);
 
 	sync_inst_trigger : synchronizer
@@ -161,16 +176,19 @@ begin
 		q => trigger_sync
 	);
 
-	BUFGMUX_clk : BUFGMUX
-	generic map (
-		CLK_SEL_TYPE => "SYNC"  -- Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
-	)
-	port map (
-		O => clk_out,   -- 1-bit output: Clock buffer output
-		I0 => clk, -- 1-bit input: Clock buffer input (S=0)
-		I1 => ext_clk, -- 1-bit input: Clock buffer input (S=1)
-		S => clk_sel    -- 1-bit input: Clock buffer select
-	);
+	 BUFGMUX_clk : BUFGMUX
+	 generic map (
+	 	CLK_SEL_TYPE => "SYNC"  -- Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
+	 )
+	 port map (
+	 	O => clk_out_sig,   -- 1-bit output: Clock buffer output
+	 	I0 => clk, -- 1-bit input: Clock buffer input (S=0)
+	 	I1 =>  global_clk_in, -- 1-bit input: Clock buffer input (S=1)
+	 	S => clk_sel    -- 1-bit input: Clock buffer select
+	 );
+	
+	clk_out <= clk_out_sig;
+	ok_state_slv <= ok_state_slv_sig;
 	
 end ok_state_ctl_arch;
 
